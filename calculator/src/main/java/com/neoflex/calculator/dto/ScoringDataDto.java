@@ -26,7 +26,7 @@ public class ScoringDataDto {
     @Schema(description = "Отчество клиента (латинские буквы, от 2 до 30 символов)", example = "Michael")
     private String middleName;
 
-    @Schema(description = "Пол клиента", example = "MALE, FEMALE, NON_BINARY", required = true)
+    @Schema(description = "Пол клиента", example = "MALE", required = true)
     private Gender gender;
 
     @Schema(description = "Дата рождения клиента (формат гггг-мм-дд), не младше 18 лет", example = "1990-05-15", required = true)
@@ -44,7 +44,7 @@ public class ScoringDataDto {
     @Schema(description = "Кем выдан паспорт", example = "ОВД Центрального района", required = true)
     private String passportIssueBranch;
 
-    @Schema(description = "Семейное положение", example = "MARRIED, DIVORCED")
+    @Schema(description = "Семейное положение", example = "MARRIED")
     private MaritalStatus maritalStatus;
 
     @Schema(description = "Количество иждивенцев", example = "2")

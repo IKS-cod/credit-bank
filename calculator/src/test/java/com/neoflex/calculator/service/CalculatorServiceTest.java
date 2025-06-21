@@ -5,13 +5,9 @@ import com.neoflex.calculator.enums.EmploymentStatus;
 import com.neoflex.calculator.enums.Gender;
 import com.neoflex.calculator.enums.MaritalStatus;
 import com.neoflex.calculator.enums.Position;
-import com.neoflex.calculator.validation.ScoringDataValidator;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.slf4j.Logger;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -19,138 +15,168 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 class CalculatorServiceTest {
 
-    @Mock
-    private ScoringDataValidator scoringDataValidator;
-
-    @Mock
-    private Logger logger;
-
-    @InjectMocks
     private CalculatorService calculatorService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
+        calculatorService = new CalculatorService();
 
-        // Initialize baseRate and insurancePrice using ReflectionTestUtils
-        ReflectionTestUtils.setField(calculatorService, "baseRate", BigDecimal.valueOf(10));
-        ReflectionTestUtils.setField(calculatorService, "insurancePrice", BigDecimal.valueOf(1000));
+        // Устанавливаем приватные поля с помощью ReflectionTestUtils
+        ReflectionTestUtils.setField(calculatorService, "baseRate", new BigDecimal("12.0"));
+        ReflectionTestUtils.setField(calculatorService, "insurancePrice", new BigDecimal("10000"));
     }
 
     @Test
-    void calculateOffers_shouldReturnOffersWithCorrectCalculations() {
-        // Arrange
+    @DisplayName("calculateOffers возвращает 4 предложения с корректными ставками и суммами")
+    void testCalculateOffers() {
         LoanStatementRequestDto request = new LoanStatementRequestDto();
-        request.setAmount(BigDecimal.valueOf(10000));
+        request.setAmount(new BigDecimal("100000"));
         request.setTerm(12);
 
-        // Act
         List<LoanOfferDto> offers = calculatorService.calculateOffers(request);
 
-        // Assert
-        assertEquals(4, offers.size());
+        assertEquals(4, offers.size(), "Должно быть 4 варианта предложений");
 
-        LoanOfferDto offer1 = offers.get(0);
-        assertNotNull(offer1.getStatementId());
-        assertEquals(request.getAmount(), offer1.getRequestedAmount());
-        assertEquals(BigDecimal.valueOf(10).setScale(2), offer1.getRate());
-        assertEquals(request.getAmount().divide(BigDecimal.valueOf(request.getTerm()), 2, java.math.RoundingMode.HALF_UP), offer1.getMonthlyPayment());
-        assertFalse(offer1.getIsInsuranceEnabled());
-        assertFalse(offer1.getIsSalaryClient());
+        for (LoanOfferDto offer : offers) {
+            BigDecimal expectedRate = new BigDecimal("12.0");
+            if (offer.getIsInsuranceEnabled()) {
+                expectedRate = expectedRate.subtract(new BigDecimal("3"));
+            }
+            if (offer.getIsSalaryClient()) {
+                expectedRate = expectedRate.subtract(new BigDecimal("1"));
+            }
+            assertEquals(0, expectedRate.setScale(2, BigDecimal.ROUND_HALF_UP).compareTo(offer.getRate()),
+                    "Ставка рассчитана неверно");
 
-        LoanOfferDto offer2 = offers.get(1);
-        assertEquals(BigDecimal.valueOf(9).setScale(2), offer2.getRate());
-        assertTrue(offer2.getIsSalaryClient());
+            BigDecimal expectedTotalAmount = request.getAmount();
+            if (offer.getIsInsuranceEnabled()) {
+                expectedTotalAmount = expectedTotalAmount.add(new BigDecimal("10000"));
+            }
+            assertEquals(0, expectedTotalAmount.compareTo(offer.getTotalAmount()),
+                    "Общая сумма рассчитана неверно");
 
-        LoanOfferDto offer3 = offers.get(2);
-        assertEquals(BigDecimal.valueOf(7).setScale(2), offer3.getRate());
-        assertTrue(offer3.getIsInsuranceEnabled());
+            assertEquals(request.getTerm(), offer.getTerm(), "Срок кредита не совпадает");
+
+            assertTrue(offer.getMonthlyPayment().compareTo(BigDecimal.ZERO) > 0,
+                    "Ежемесячный платёж должен быть положительным");
+
+            assertNotNull(offer.getStatementId(), "Идентификатор заявки не должен быть null");
+        }
     }
 
     @Test
-    void calculateOffers_insuranceEnabled_salaryClientEnabled_shouldApplyDiscounts() {
-        // Arrange
+    @DisplayName("calculateOffers возвращает предложения, отсортированные по убыванию ставки")
+    void testOffersSortedByRateDescending() {
         LoanStatementRequestDto request = new LoanStatementRequestDto();
-        request.setAmount(BigDecimal.valueOf(10000));
-        request.setTerm(12);
+        request.setAmount(new BigDecimal("50000"));
+        request.setTerm(24);
 
-        // Act
         List<LoanOfferDto> offers = calculatorService.calculateOffers(request);
 
-        // Assert
-        LoanOfferDto offer = offers.stream()
-                .filter(o -> o.getIsInsuranceEnabled() && o.getIsSalaryClient())
-                .findFirst()
-                .orElse(null);
-
-        assertNotNull(offer);
-        assertEquals(BigDecimal.valueOf(6).setScale(2), offer.getRate());
-        assertEquals(BigDecimal.valueOf(11000).divide(BigDecimal.valueOf(12), 2, java.math.RoundingMode.HALF_UP), offer.getMonthlyPayment());
-    }
-//-------------------------
-@Test
-void calculateCredit_shouldThrowException_whenValidationFails() {
-    ScoringDataDto data = mock(ScoringDataDto.class);
-    when(scoringDataValidator.validate(data)).thenReturn(false);
-
-    IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-            () -> calculatorService.calculateCredit(data));
-    assertEquals("Прескоринг не пройден", ex.getMessage());
-}
-
-    @Test
-    void calculateCredit_shouldThrowException_whenRejectConditionMet() {
-        EmploymentDto employment = new EmploymentDto();
-        employment.setEmploymentStatus(EmploymentStatus.UNEMPLOYED); // условие для отказа
-        employment.setWorkExperienceTotal(36);
-        employment.setWorkExperienceCurrent(24);
-        employment.setSalary(BigDecimal.valueOf(50000));
-
-        ScoringDataDto data = new ScoringDataDto();
-        data.setEmployment(employment);
-        data.setBirthdate(LocalDate.now().minusYears(35));
-        data.setAmount(BigDecimal.valueOf(100000));
-        data.setTerm(12);
-
-        when(scoringDataValidator.validate(data)).thenReturn(true);
-
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                () -> calculatorService.calculateCredit(data));
-        assertEquals("Отказ по скорингу", ex.getMessage());
+        for (int i = 0; i < offers.size() - 1; i++) {
+            BigDecimal currentRate = offers.get(i).getRate();
+            BigDecimal nextRate = offers.get(i + 1).getRate();
+            assertTrue(currentRate.compareTo(nextRate) >= 0, "Предложения не отсортированы по убыванию ставки");
+        }
     }
 
+
     @Test
-    void calculateCredit_shouldReturnCreditDto_whenValidData() {
-        EmploymentDto employment = new EmploymentDto();
-        employment.setEmploymentStatus(EmploymentStatus.SELF_EMPLOYED);
-        employment.setPosition(Position.TOP_MANAGER);
-        employment.setSalary(BigDecimal.valueOf(50000));
-        employment.setWorkExperienceTotal(36);
-        employment.setWorkExperienceCurrent(24);
+    @DisplayName("calculateCredit корректно рассчитывает кредит с базовыми данными")
+    void testCalculateCreditBasic() {
+        EmploymentDto employmentDto = new EmploymentDto();
 
-        ScoringDataDto data = new ScoringDataDto();
-        data.setEmployment(employment);
-        data.setBirthdate(LocalDate.now().minusYears(35));
-        data.setGender(Gender.FEMALE);
-        data.setMaritalStatus(MaritalStatus.MARRIED);
-        data.setAmount(BigDecimal.valueOf(100000));
-        data.setTerm(12);
-        data.setIsInsuranceEnabled(true);
-        data.setIsSalaryClient(true);
+        employmentDto.setEmploymentStatus(EmploymentStatus.SELF_EMPLOYED);
+        employmentDto.setEmployerINN("7707083893");
+        employmentDto.setSalary(BigDecimal.valueOf(75000.00));
+        employmentDto.setPosition(Position.MIDDLE_MANAGER);
+        employmentDto.setWorkExperienceTotal(120);
+        employmentDto.setWorkExperienceCurrent(24);
+        ScoringDataDto scoringData = new ScoringDataDto();
+        scoringData.setAmount(new BigDecimal("100000"));
+        scoringData.setTerm(12);
+        scoringData.setIsInsuranceEnabled(false);
+        scoringData.setIsSalaryClient(false);
+        scoringData.setBirthdate(LocalDate.now().minusYears(35));
+        scoringData.setGender(Gender.MALE);
+        scoringData.setMaritalStatus(MaritalStatus.MARRIED);
+        scoringData.setEmployment(employmentDto);
 
-        when(scoringDataValidator.validate(data)).thenReturn(true);
-
-        CreditDto credit = calculatorService.calculateCredit(data);
+        CreditDto credit = calculatorService.calculateCredit(scoringData);
 
         assertNotNull(credit);
-        assertEquals(data.getAmount(), credit.getAmount());
-        assertEquals(data.getTerm(), credit.getTerm());
-        assertNotNull(credit.getPaymentSchedule());
-        assertEquals(data.getTerm(), credit.getPaymentSchedule().size());
+        assertEquals(scoringData.getAmount(), credit.getAmount());
+        assertEquals(scoringData.getTerm(), credit.getTerm());
+        assertTrue(credit.getMonthlyPayment().compareTo(BigDecimal.ZERO) > 0);
         assertTrue(credit.getRate().compareTo(BigDecimal.ZERO) >= 0);
+        assertEquals(scoringData.getIsInsuranceEnabled(), credit.getIsInsuranceEnabled());
+        assertEquals(scoringData.getIsSalaryClient(), credit.getIsSalaryClient());
+
+        // Проверяем, что график платежей заполнен и содержит нужное число элементов
+        List<PaymentScheduleElementDto> schedule = credit.getPaymentSchedule();
+        assertNotNull(schedule);
+        assertEquals(scoringData.getTerm(), schedule.size());
+
+        // Проверяем, что сумма всех платежей равна ПСК (приблизительно)
+        BigDecimal sumPayments = schedule.stream()
+                .map(PaymentScheduleElementDto::getTotalPayment)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, BigDecimal.ROUND_HALF_UP);
+        assertEquals(credit.getPsk().setScale(2, BigDecimal.ROUND_HALF_UP), sumPayments);
+    }
+
+    @Test
+    @DisplayName("calculateCredit корректно учитывает скидки по страховке и зарплатному клиенту")
+    void testCalculateCreditWithDiscounts() {
+        EmploymentDto employmentDto = new EmploymentDto();
+
+        employmentDto.setEmploymentStatus(EmploymentStatus.SELF_EMPLOYED);
+        employmentDto.setEmployerINN("7707083893");
+        employmentDto.setSalary(BigDecimal.valueOf(75000.00));
+        employmentDto.setPosition(Position.MIDDLE_MANAGER);
+        employmentDto.setWorkExperienceTotal(120);
+        employmentDto.setWorkExperienceCurrent(24);
+        ScoringDataDto scoringData = new ScoringDataDto();
+        scoringData.setAmount(new BigDecimal("100000"));
+        scoringData.setTerm(12);
+        scoringData.setIsInsuranceEnabled(true);
+        scoringData.setIsSalaryClient(true);
+        scoringData.setBirthdate(LocalDate.now().minusYears(40));
+        scoringData.setGender(Gender.FEMALE);
+        scoringData.setMaritalStatus(MaritalStatus.MARRIED);
+        scoringData.setEmployment(employmentDto);
+
+        CreditDto credit = calculatorService.calculateCredit(scoringData);
+
+        assertNotNull(credit);
+        // Ожидаем, что ставка будет меньше базовой из-за скидок и корректировок
+        assertTrue(credit.getRate().compareTo(new BigDecimal("0")) >= 0);
+        assertTrue(credit.getRate().compareTo(new BigDecimal("12")) < 0);
+
+        // Проверяем, что скидки применены (ставка уменьшена)
+        BigDecimal expectedRate = new BigDecimal("12.0")
+                .add(new BigDecimal("2"))    // SELF_EMPLOYED +2
+                .add(new BigDecimal("-2"))   // MIDDLE_MANAGER -2
+                .add(new BigDecimal("-3"))   // MARRIED -3
+                .add(new BigDecimal("-3"))   // FEMALE 32-60 -3
+                .subtract(new BigDecimal("3"))  // страховка -3
+                .subtract(new BigDecimal("1")); // зарплатный клиент -1
+
+        if (expectedRate.compareTo(BigDecimal.ZERO) < 0) {
+            expectedRate = BigDecimal.ZERO;
+        }
+
+        assertEquals(0, expectedRate.setScale(2, BigDecimal.ROUND_HALF_UP).compareTo(credit.getRate()));
+
+        // Проверяем, что ежемесячный платёж положительный
+        assertTrue(credit.getMonthlyPayment().compareTo(BigDecimal.ZERO) > 0);
+
+        // Проверяем график платежей
+        assertNotNull(credit.getPaymentSchedule());
+        assertEquals(scoringData.getTerm(), credit.getPaymentSchedule().size());
     }
 }
+

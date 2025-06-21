@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 @Schema(description = "DTO для информации о трудоустройстве клиента")
 public class EmploymentDto {
 
-    @Schema(description = "Статус занятости", example = "EMPLOYED", required = true)
+    @Schema(description = "Статус занятости", example = "SELF_EMPLOYED", required = true)
     private EmploymentStatus employmentStatus;
 
     @Schema(description = "ИНН работодателя", example = "7707083893")
@@ -19,7 +19,7 @@ public class EmploymentDto {
     @Schema(description = "Заработная плата", example = "75000.00")
     private BigDecimal salary;
 
-    @Schema(description = "Должность", example = "MANAGER")
+    @Schema(description = "Должность", example = "MIDDLE_MANAGER")
     private Position position;
 
     @Schema(description = "Общий трудовой стаж в месяцах", example = "120")
