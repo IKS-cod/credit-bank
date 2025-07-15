@@ -9,6 +9,7 @@ public class PassportIssueDateValidator implements ConstraintValidator<ValidPass
 
     @Override
     public boolean isValid(ScoringDataDto dto, ConstraintValidatorContext context) {
+
         LocalDate birthdate = dto.getBirthdate();
         LocalDate passportIssueDate = dto.getPassportIssueDate();
 
@@ -21,6 +22,7 @@ public class PassportIssueDateValidator implements ConstraintValidator<ValidPass
         boolean notInFuture = !passportIssueDate.isAfter(today);
 
         boolean valid = notBefore14 && notAfter120 && notInFuture;
+
 
         if (!valid) {
             context.disableDefaultConstraintViolation();
