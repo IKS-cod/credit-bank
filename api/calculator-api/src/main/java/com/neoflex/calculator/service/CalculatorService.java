@@ -213,7 +213,7 @@ public class CalculatorService {
         switch (status) {
             case MARRIED:
                 return BigDecimal.valueOf(-3);
-            case DIVORCED:
+            case DIVORCED,SINGLE:
                 return BigDecimal.ONE;
             default:
                 return BigDecimal.ZERO;
