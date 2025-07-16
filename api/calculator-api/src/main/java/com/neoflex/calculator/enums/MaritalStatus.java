@@ -2,5 +2,6 @@ package com.neoflex.calculator.enums;
 
 public enum MaritalStatus {
     MARRIED,
-    DIVORCED
+    DIVORCED,
+    SINGLE
 }
