@@ -31,8 +31,8 @@ public class DealService {
     private final RestTemplate restTemplate;
     private final CreditRepository creditRepository;
 
-    private static final String CALCULATOR_URL = "http://calculator/offers";
-    private static final String CALCULATOR_CALC_URL = "http://calculator/calc";
+    private static final String CALCULATOR_URL = "http://localhost:8081/calculator/offers";
+    private static final String CALCULATOR_CALC_URL = "http://localhost:8081/calculator/calc";
 
     @Transactional
     public List<LoanOfferDto> calculateLoanOffers(LoanStatementRequestDto requestDto) {
@@ -47,6 +47,25 @@ public class DealService {
         Statement statement = new Statement();
         statement.setStatementId(null);
         statement.setClient(client);
+        LocalDateTime localDateTime = LocalDateTime.now();
+        statement.setCreationDate(localDateTime);
+        ApplicationStatus applicationStatus = ApplicationStatus.DOCUMENT_CREATED;
+        statement.setStatus(applicationStatus);
+
+        Credit credit = new Credit();
+        credit.setAmount(requestDto.getAmount());
+        credit.setTerm(requestDto.getTerm());
+        credit.setCreditStatus(CreditStatus.CALCULATED);
+        credit = creditRepository.save(credit);
+        statement.setCredit(credit);
+        StatementStatusHistory statementStatusHistory = new StatementStatusHistory();
+        statementStatusHistory.setTime(localDateTime);
+        statementStatusHistory.setStatus(applicationStatus.toString());
+        statementStatusHistory.setChangeType(ChangeType.AUTOMATIC);
+        List<StatementStatusHistory> statementStatusHistoryList = new ArrayList<>();
+        statementStatusHistoryList.add(statementStatusHistory);
+        statement.setStatementStatusHistory(statementStatusHistoryList);
+
         statement = statementRepository.save(statement);
         logger.debug("Statement сохранён: {}", statement);
 

@@ -18,6 +18,7 @@ import java.util.UUID;
 public class Credit {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "credit_id", nullable = false, unique = true)
     private UUID creditId;
 

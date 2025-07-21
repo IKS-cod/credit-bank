@@ -18,6 +18,7 @@ import java.util.UUID;
 public class Statement {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "statement_id", nullable = false, unique = true)
     private UUID statementId;
 

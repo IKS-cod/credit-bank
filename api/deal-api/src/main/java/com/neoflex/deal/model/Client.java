@@ -18,6 +18,7 @@ import java.time.LocalDate;
 public class Client {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "client_id", nullable = false, unique = true)
     private UUID clientId;
 
