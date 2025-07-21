@@ -74,10 +74,13 @@ public class CalculatorService {
 
                 logger.debug("Рассчитан ежемесячный платёж с учётом ставки: monthlyPayment={}", monthlyPayment);
 
+                BigDecimal totalRepayment = monthlyPayment.multiply(BigDecimal.valueOf(term)).setScale(2, RoundingMode.HALF_UP);
+                logger.debug("Рассчитана итоговая сумма выплат по кредиту (totalRepayment): {}", totalRepayment);
+
                 LoanOfferDto offer = new LoanOfferDto();
                 offer.setStatementId(UUID.randomUUID());
                 offer.setRequestedAmount(request.getAmount());
-                offer.setTotalAmount(totalAmount);
+                offer.setTotalAmount(totalRepayment);
                 offer.setTerm(request.getTerm());
                 offer.setMonthlyPayment(monthlyPayment);
                 offer.setRate(rate.setScale(2, RoundingMode.HALF_UP));
@@ -117,7 +120,7 @@ public class CalculatorService {
         BigDecimal denominator = onePlusRPowerN.subtract(BigDecimal.ONE);
         BigDecimal monthlyPayment;
 
-        if (denominator.compareTo(BigDecimal.ZERO) == 0) {
+        if (denominator.compareTo(BigDecimal.ZERO) <= 0) {
             logger.debug("Знаменатель равен нулю, используем простое деление суммы кредита на срок");
             monthlyPayment = amount.divide(BigDecimal.valueOf(term), 2, RoundingMode.HALF_UP);
         } else {
@@ -213,7 +216,7 @@ public class CalculatorService {
         switch (status) {
             case MARRIED:
                 return BigDecimal.valueOf(-3);
-            case DIVORCED,SINGLE:
+            case DIVORCED, SINGLE:
                 return BigDecimal.ONE;
             default:
                 return BigDecimal.ZERO;
