@@ -39,7 +39,7 @@ public class LoanStatementRequestDto {
     private String middleName;
 
     @Schema(description = "Email адрес клиента", example = "john.doe@example.com", required = true)
-    @Pattern(regexp = "^[a-z0-9A-Z_!#$%&'*+/=?`{|}~^.-]+@[a-z0-9A-Z.-]+$")
+    @Pattern(regexp = "^[a-z0-9A-Z_!#$%&'*+/=?`{|}~^.-]+@[a-z0-9A-Z.-]+$", message = "Email адрес клиента должен быть формата: john.doe@example.com")
     private String email;
 
     @Schema(description = "Дата рождения клиента (формат гггг-мм-дд), не младше 18 лет", example = "1990-05-15", required = true)
