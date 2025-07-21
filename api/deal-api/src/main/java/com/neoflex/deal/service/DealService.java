@@ -1,19 +1,15 @@
 package com.neoflex.deal.service;
 
 import com.neoflex.deal.dto.*;
-import com.neoflex.deal.enums.*;
+import com.neoflex.deal.enums.ApplicationStatus;
+import com.neoflex.deal.enums.ChangeType;
+import com.neoflex.deal.enums.CreditStatus;
 import com.neoflex.deal.exception.StatementNotFoundException;
 import com.neoflex.deal.model.*;
 import com.neoflex.deal.repository.ClientRepository;
 import com.neoflex.deal.repository.CreditRepository;
 import com.neoflex.deal.repository.StatementRepository;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
