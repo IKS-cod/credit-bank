@@ -117,7 +117,7 @@ public class DealControllerTest {
         employmentDto.setEmploymentStatus(EmploymentStatus.SELF_EMPLOYED);
         employmentDto.setEmployerINN("7707083893");
         employmentDto.setSalary(new BigDecimal("75000.00"));
-        employmentDto.setPosition(EmploymentPosition.MID_MANAGER);
+        employmentDto.setPosition(EmploymentPosition.MIDDLE_MANAGER);
         employmentDto.setWorkExperienceTotal(120);
         employmentDto.setWorkExperienceCurrent(24);
 

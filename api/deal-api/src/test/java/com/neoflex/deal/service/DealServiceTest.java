@@ -147,7 +147,7 @@ public class DealServiceTest {
         assertThat(history).isNotEmpty();
         StatementStatusHistory lastStatus = history.get(history.size() - 1);
         assertThat(lastStatus.getStatus()).isEqualTo(ApplicationStatus.APPROVED.name());
-        assertThat(lastStatus.getChangeType()).isEqualTo(ChangeType.MANUAL);
+        assertThat(lastStatus.getChangeType()).isEqualTo(ChangeType.AUTOMATIC);
         assertThat(lastStatus.getTime()).isNotNull();
 
         LoanOffer appliedOffer = statement.getAppliedOffer();
@@ -172,7 +172,6 @@ public class DealServiceTest {
         verify(statementRepository, never()).save(any());
     }
 
-//-----------------------------
 @Test
 public void testFinishRegistration_success() {
     UUID statementId = UUID.randomUUID();
@@ -187,10 +186,10 @@ public void testFinishRegistration_success() {
     finishDto.setPassportIssueBranch("Branch");
     finishDto.setAccountNumber("40817810099910004312");
     EmploymentDto employmentDto = new EmploymentDto();
-    employmentDto.setEmploymentStatus(EmploymentStatus.EMPLOYED);
+    employmentDto.setEmploymentStatus(EmploymentStatus.SELF_EMPLOYED);
     employmentDto.setEmployerINN("1234567890");
     employmentDto.setSalary(new BigDecimal("75000"));
-    employmentDto.setPosition(EmploymentPosition.MID_MANAGER);
+    employmentDto.setPosition(EmploymentPosition.MIDDLE_MANAGER);
     employmentDto.setWorkExperienceTotal(60);
     employmentDto.setWorkExperienceCurrent(24);
     finishDto.setEmployment(employmentDto);
@@ -206,10 +205,21 @@ public void testFinishRegistration_success() {
     passport.setNumber("567890");
     client.setPassport(passport);
 
+    LoanOffer loanOffer = new LoanOffer();
+    loanOffer.setStatementId(UUID.fromString("eb8eee3e-b99a-4249-a867-fb0d72fd726f"));
+    loanOffer.setRequestedAmount(BigDecimal.valueOf(50000));
+    loanOffer.setTotalAmount(BigDecimal.valueOf(52749.48));
+    loanOffer.setTerm(12);
+    loanOffer.setMonthlyPayment(BigDecimal.valueOf(4395.79));
+    loanOffer.setRate(BigDecimal.valueOf(10));
+    loanOffer.setIsInsuranceEnabled(false);
+    loanOffer.setIsSalaryClient(false);
+
     Statement statement = new Statement();
     statement.setStatementId(statementId);
     statement.setClient(client);
     statement.setStatementStatusHistory(new ArrayList<>());
+    statement.setAppliedOffer(loanOffer);
 
     when(statementRepository.findById(statementId)).thenReturn(Optional.of(statement));
 
@@ -254,7 +264,7 @@ public void testFinishRegistration_success() {
 
     StatementStatusHistory lastStatus = statement.getStatementStatusHistory().get(statement.getStatementStatusHistory().size() - 1);
     assertThat(lastStatus.getStatus()).isEqualTo(ApplicationStatus.PREPARE_DOCUMENTS.name());
-    assertThat(lastStatus.getChangeType()).isEqualTo(ChangeType.MANUAL);
+    assertThat(lastStatus.getChangeType()).isEqualTo(ChangeType.AUTOMATIC);
     assertThat(lastStatus.getTime()).isNotNull();
 }
 
@@ -289,9 +299,20 @@ public void testFinishRegistration_success() {
         passport.setNumber("567890");
         client.setPassport(passport);
 
+        LoanOffer loanOffer = new LoanOffer();
+        loanOffer.setStatementId(UUID.fromString("eb8eee3e-b99a-4249-a867-fb0d72fd726f"));
+        loanOffer.setRequestedAmount(BigDecimal.valueOf(50000));
+        loanOffer.setTotalAmount(BigDecimal.valueOf(52749.48));
+        loanOffer.setTerm(12);
+        loanOffer.setMonthlyPayment(BigDecimal.valueOf(4395.79));
+        loanOffer.setRate(BigDecimal.valueOf(10));
+        loanOffer.setIsInsuranceEnabled(false);
+        loanOffer.setIsSalaryClient(false);
+
         Statement statement = new Statement();
         statement.setStatementId(statementId);
         statement.setClient(client);
+        statement.setAppliedOffer(loanOffer);
 
         when(statementRepository.findById(statementId)).thenReturn(Optional.of(statement));
 

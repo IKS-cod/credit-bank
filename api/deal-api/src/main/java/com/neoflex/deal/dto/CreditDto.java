@@ -16,19 +16,19 @@ public class CreditDto {
     @Schema(description = "Срок кредита в месяцах", example = "12", required = true)
     private Integer term;
 
-    @Schema(description = "Ежемесячный платеж", example = "4500.50")
+    @Schema(description = "Ежемесячный платеж", example = "4500.50", required = true)
     private BigDecimal monthlyPayment;
 
-    @Schema(description = "Процентная ставка", example = "12.5")
+    @Schema(description = "Процентная ставка", example = "12.5", required = true)
     private BigDecimal rate;
 
-    @Schema(description = "Полная стоимость кредита (ПСК)", example = "15.0")
+    @Schema(description = "Полная стоимость кредита (ПСК)", example = "15.0", required = true)
     private BigDecimal psk;
 
-    @Schema(description = "Включена ли страховка", example = "true")
+    @Schema(description = "Включена ли страховка", example = "true", required = true)
     private Boolean isInsuranceEnabled;
 
-    @Schema(description = "Является ли клиент зарплатным", example = "false")
+    @Schema(description = "Является ли клиент зарплатным", example = "false", required = true)
     private Boolean isSalaryClient;
 
     @Schema(description = "График платежей")

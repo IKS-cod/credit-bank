@@ -1,15 +1,19 @@
 package com.neoflex.deal.service;
 
 import com.neoflex.deal.dto.*;
-import com.neoflex.deal.enums.ApplicationStatus;
-import com.neoflex.deal.enums.ChangeType;
-import com.neoflex.deal.enums.CreditStatus;
+import com.neoflex.deal.enums.*;
 import com.neoflex.deal.exception.StatementNotFoundException;
 import com.neoflex.deal.model.*;
 import com.neoflex.deal.repository.ClientRepository;
 import com.neoflex.deal.repository.CreditRepository;
 import com.neoflex.deal.repository.StatementRepository;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -144,7 +150,7 @@ public class DealService {
         StatementStatusHistory newStatus = new StatementStatusHistory();
         newStatus.setStatus(ApplicationStatus.APPROVED.name());
         newStatus.setTime(LocalDateTime.now());
-        newStatus.setChangeType(ChangeType.MANUAL);
+        newStatus.setChangeType(ChangeType.AUTOMATIC);
 
         history.add(newStatus);
         statement.setStatementStatusHistory(history);
@@ -179,16 +185,20 @@ public class DealService {
 
         UUID statementId = UUID.fromString(statementIdStr);
 
-        // 1. Получаем заявку из БД
+        // Получаем заявку из БД
         Statement statement = statementRepository.findById(statementId)
                 .orElseThrow(() -> new StatementNotFoundException("Statement not found with id: " + statementId));
         logger.debug("Заявка найдена: {}", statement);
 
-        // 2. Создаём ScoringDataDto и насыщаем его из FinishRegistrationRequestDto и Client
+        // Создаём ScoringDataDto и насыщаем его из FinishRegistrationRequestDto и Client
         ScoringDataDto scoringData = mapToScoringDataDto(finishDto, statement.getClient());
+        scoringData.setAmount(statement.getAppliedOffer().getRequestedAmount());
+        scoringData.setTerm(statement.getAppliedOffer().getTerm());
+        scoringData.setIsInsuranceEnabled(statement.getAppliedOffer().getIsInsuranceEnabled());
+        scoringData.setIsSalaryClient(statement.getAppliedOffer().getIsSalaryClient());
         logger.debug("Создан ScoringDataDto: {}", scoringData);
 
-        // 3. Отправляем POST запрос в микросервис калькулятора
+        // Отправляем POST запрос в микросервис калькулятора
         ResponseEntity<CreditDto> response = restTemplate.postForEntity(
                 CALCULATOR_CALC_URL,
                 scoringData,
@@ -203,15 +213,15 @@ public class DealService {
         CreditDto creditDto = response.getBody();
         logger.debug("Получен CreditDto: {}", creditDto);
 
-        // 4. Создаём сущность Credit из CreditDto
+        // Создаём сущность Credit из CreditDto
         Credit credit = mapToCredit(creditDto);
         logger.debug("Преобразован CreditDto в Credit: {}", credit);
 
-        // 5. Сохраняем Credit в базу
+        // Сохраняем Credit в базу
         creditRepository.save(credit);
         logger.info("Credit сохранён: {}", credit);
 
-        // 6. Обновляем заявку
+        // Обновляем заявку
         statement.setCredit(credit);
         statement.setStatus(ApplicationStatus.PREPARE_DOCUMENTS);
         logger.debug("Обновлён статус заявки на PREPARE_DOCUMENTS");
@@ -224,13 +234,13 @@ public class DealService {
         StatementStatusHistory newStatus = new StatementStatusHistory();
         newStatus.setStatus(ApplicationStatus.PREPARE_DOCUMENTS.name());
         newStatus.setTime(LocalDateTime.now());
-        newStatus.setChangeType(ChangeType.MANUAL);
+        newStatus.setChangeType(ChangeType.AUTOMATIC);
 
         history.add(newStatus);
         statement.setStatementStatusHistory(history);
         logger.debug("Добавлена запись в историю статусов: {}", newStatus);
 
-        // 7. Сохраняем обновлённую заявку
+        // Сохраняем обновлённую заявку
         statementRepository.save(statement);
         logger.info("finishRegistration - Заявка обновлена и сохранена: {}", statement);
     }
@@ -252,6 +262,7 @@ public class DealService {
         scoringData.setAccountNumber(finishDto.getAccountNumber());
 
         return scoringData;
+
     }
 
     private Credit mapToCredit(CreditDto creditDto) {

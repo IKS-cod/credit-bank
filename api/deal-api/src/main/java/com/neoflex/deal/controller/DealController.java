@@ -58,7 +58,7 @@ public class DealController {
     @PostMapping("/calculate/{statementId}")
     public void finishRegistration(
             @Parameter(description = "ID заявки", required = true)
-            @PathVariable String statementId,
+            @PathVariable("statementId") String statementId,
             @RequestBody FinishRegistrationRequestDto request) {
         log.info("POST /deal/calculate/{} - Входные данные: {}", statementId, request);
         dealService.finishRegistration(statementId, request);
