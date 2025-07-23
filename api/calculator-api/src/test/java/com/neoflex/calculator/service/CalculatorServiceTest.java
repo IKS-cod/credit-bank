@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -30,8 +31,13 @@ class CalculatorServiceTest {
     }
 
     @Test
-    @DisplayName("calculateOffers возвращает 4 предложения с корректными ставками и суммами")
+    @DisplayName("calculateOffers возвращает 4 предложения с корректными ставками, выплатами и суммами")
     void testCalculateOffers() {
+        BigDecimal baseRate = new BigDecimal("12.0");
+        BigDecimal insurancePrice = new BigDecimal("10000");
+        BigDecimal insuranceDiscount = new BigDecimal("3.0");
+        BigDecimal salaryDiscount = new BigDecimal("1.0");
+
         LoanStatementRequestDto request = new LoanStatementRequestDto();
         request.setAmount(new BigDecimal("100000"));
         request.setTerm(12);
@@ -41,31 +47,46 @@ class CalculatorServiceTest {
         assertEquals(4, offers.size(), "Должно быть 4 варианта предложений");
 
         for (LoanOfferDto offer : offers) {
-            BigDecimal expectedRate = new BigDecimal("12.0");
-            if (offer.getIsInsuranceEnabled()) {
-                expectedRate = expectedRate.subtract(new BigDecimal("3"));
+            // Рассчитываем ожидаемую ставку с учетом скидок
+            BigDecimal expectedRate = baseRate;
+            if (Boolean.TRUE.equals(offer.getIsInsuranceEnabled())) {
+                expectedRate = expectedRate.subtract(insuranceDiscount);
             }
-            if (offer.getIsSalaryClient()) {
-                expectedRate = expectedRate.subtract(new BigDecimal("1"));
+            if (Boolean.TRUE.equals(offer.getIsSalaryClient())) {
+                expectedRate = expectedRate.subtract(salaryDiscount);
             }
-            assertEquals(0, expectedRate.setScale(2, BigDecimal.ROUND_HALF_UP).compareTo(offer.getRate()),
-                    "Ставка рассчитана неверно");
+            expectedRate = expectedRate.setScale(2, BigDecimal.ROUND_HALF_UP);
+            assertEquals(0, expectedRate.compareTo(offer.getRate()), "Ставка рассчитана неверно");
 
-            BigDecimal expectedTotalAmount = request.getAmount();
-            if (offer.getIsInsuranceEnabled()) {
-                expectedTotalAmount = expectedTotalAmount.add(new BigDecimal("10000"));
+            // Рассчитываем ожидаемую сумму кредита с учетом страховки
+            BigDecimal totalAmount = request.getAmount();
+            if (Boolean.TRUE.equals(offer.getIsInsuranceEnabled())) {
+                totalAmount = totalAmount.add(insurancePrice);
             }
-            assertEquals(0, expectedTotalAmount.compareTo(offer.getTotalAmount()),
-                    "Общая сумма рассчитана неверно");
 
-            assertEquals(request.getTerm(), offer.getTerm(), "Срок кредита не совпадает");
+            int term = request.getTerm();
+            BigDecimal monthlyRate = expectedRate.divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP)
+                    .divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
+            BigDecimal onePlusRatePowerN = (BigDecimal.ONE.add(monthlyRate)).pow(term);
 
-            assertTrue(offer.getMonthlyPayment().compareTo(BigDecimal.ZERO) > 0,
-                    "Ежемесячный платёж должен быть положительным");
+            BigDecimal annuityCoefficient = monthlyRate.multiply(onePlusRatePowerN)
+                    .divide(onePlusRatePowerN.subtract(BigDecimal.ONE), 10, RoundingMode.HALF_UP);
 
+            BigDecimal expectedMonthlyPayment = totalAmount.multiply(annuityCoefficient).setScale(2, RoundingMode.HALF_UP);
+
+            BigDecimal expectedTotalRepayment = expectedMonthlyPayment.multiply(BigDecimal.valueOf(term)).setScale(2, RoundingMode.HALF_UP);
+
+            // Проверяем ежемесячный платёж и общую сумму выплат
+            assertEquals(0, expectedMonthlyPayment.compareTo(offer.getMonthlyPayment()), "Ежемесячный платёж рассчитан неверно");
+            assertEquals(0, expectedTotalRepayment.compareTo(offer.getTotalAmount()), "Общая сумма рассчитана неверно");
+
+            assertEquals(request.getAmount(), offer.getRequestedAmount(), "Сумма запроса не совпадает");
+            assertEquals(term, offer.getTerm(), "Срок кредита не совпадает");
             assertNotNull(offer.getStatementId(), "Идентификатор заявки не должен быть null");
+            assertTrue(offer.getMonthlyPayment().compareTo(BigDecimal.ZERO) > 0, "Ежемесячный платёж должен быть положительным");
         }
     }
+
 
     @Test
     @DisplayName("calculateOffers возвращает предложения, отсортированные по убыванию ставки")
