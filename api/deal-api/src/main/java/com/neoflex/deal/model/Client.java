@@ -34,7 +34,7 @@ public class Client {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Column(name = "email", unique = true)
+    @Column(name = "email")
     private String email;
 
     @Enumerated(EnumType.STRING)
