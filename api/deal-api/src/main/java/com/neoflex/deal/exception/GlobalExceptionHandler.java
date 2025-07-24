@@ -1,15 +1,17 @@
 package com.neoflex.deal.exception;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.client.HttpStatusCodeException;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @RestControllerAdvice
 @RequiredArgsConstructor
@@ -17,84 +19,61 @@ public class GlobalExceptionHandler {
 
     private final ObjectMapper objectMapper;
 
-
-    @ExceptionHandler(StatementNotFoundException.class)
-    public ResponseEntity<ValidationErrorResponse> handleNotFoundException(StatementNotFoundException ex) {
-        Violation violation = new Violation("statement", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ValidationErrorResponse(List.of(violation)));
-    }
-
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ValidationErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
-        String details = extractDetailMessage(ex);
-        Violation violation = new Violation("email", details);
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ValidationErrorResponse(List.of(violation)));
-    }
-
-
-    @ExceptionHandler(org.springframework.web.client.HttpStatusCodeException.class)
-    public ResponseEntity<ValidationErrorResponse> handleHttpStatusCode(org.springframework.web.client.HttpStatusCodeException ex) {
-        String message = extractExternalServiceMessage(ex);
-        Violation violation = new Violation("externalService", message);
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
-                .body(new ValidationErrorResponse(List.of(violation)));
-    }
-
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ValidationErrorResponse> handleAnyException(Exception e) {
-        String message = extractDetailMessage(e);
-        Violation violation = new Violation("error", message);
-        ValidationErrorResponse response = new ValidationErrorResponse(List.of(violation));
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-
-
-    private String extractDetailMessage(Throwable ex) {
-        Throwable root = ex;
-        while (root.getCause() != null) {
-            root = root.getCause();
-        }
-        String msg = root.getMessage();
-        if (msg == null) {
-            return "Неизвестная ошибка";
-        }
-        String detailsMarker = "Подробности: ";
-        int idx = msg.indexOf(detailsMarker);
-        if (idx != -1) {
-            return msg.substring(idx + detailsMarker.length()).trim();
-        }
-        detailsMarker = "Detail: ";
-        idx = msg.indexOf(detailsMarker);
-        if (idx != -1) {
-            return msg.substring(idx + detailsMarker.length()).trim();
-        }
-        return msg;
-    }
-
-
-    private String extractExternalServiceMessage(org.springframework.web.client.HttpStatusCodeException ex) {
+    @ExceptionHandler(HttpStatusCodeException.class)
+    public ResponseEntity<ValidationErrorResponse> handleHttpStatusCode(HttpStatusCodeException ex) {
         String responseBody = ex.getResponseBodyAsString();
-        if (responseBody == null || responseBody.isBlank()) {
-            return ex.getStatusText();
-        }
-        try {
-            Map<?, ?> map = objectMapper.readValue(responseBody, Map.class);
-            Object message = map.get("message");
-            if (message != null) {
-                return message.toString();
-            }
-            Object error = map.get("error");
-            if (error != null) {
-                return error.toString();
-            }
-        } catch (Exception parseEx) {
+        if (responseBody != null && !responseBody.isBlank()) {
+            try {
+                JsonNode root = objectMapper.readTree(responseBody);
 
+                // violations — приоритетный путь
+                JsonNode violationsNode = root.get("violations");
+                if (violationsNode != null && violationsNode.isArray() && violationsNode.size() > 0) {
+                    System.out.println("[DEBUG] violations node detected, converting to Violation[]");
+                    List<Violation> violations = Arrays.asList(
+                            objectMapper.treeToValue(violationsNode, Violation[].class)
+                    );
+                    return ResponseEntity
+                            .status(ex.getStatusCode())
+                            .body(new ValidationErrorResponse(violations));
+                }
+
+                // message
+                JsonNode messageNode = root.get("message");
+                if (messageNode != null && !messageNode.isNull() && !messageNode.asText().isBlank()) {
+                    Violation violation = new Violation("externalService", messageNode.asText());
+                    return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                            .body(new ValidationErrorResponse(Collections.singletonList(violation)));
+                }
+
+                // error
+                JsonNode errorNode = root.get("error");
+                if (errorNode != null && !errorNode.isNull() && !errorNode.asText().isBlank()) {
+                    Violation violation = new Violation("externalService", errorNode.asText());
+                    return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                            .body(new ValidationErrorResponse(Collections.singletonList(violation)));
+                }
+
+                // Fallback: если не нашли violations, message, error — возвращаем информативную ошибку, а не exception
+                Violation violation = new Violation("externalService", "Ошибка во внешней системе: неизвестный формат ответа");
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body(new ValidationErrorResponse(Collections.singletonList(violation)));
+
+            } catch (Exception parseEx) {
+                Violation violation = new Violation("externalService", "Ошибка во внешней системе: не удалось разобрать JSON-ответ: " + parseEx.getMessage());
+                return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                        .body(new ValidationErrorResponse(Collections.singletonList(violation)));
+            }
         }
-        return responseBody;
+
+        // Если совсем пусто — возвращаем стандартный fallback
+        Violation violation = new Violation("externalService", "Ошибка во внешней системе");
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(new ValidationErrorResponse(Collections.singletonList(violation)));
     }
 }
+
+
+
+
 

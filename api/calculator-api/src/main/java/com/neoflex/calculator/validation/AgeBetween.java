@@ -11,7 +11,6 @@ import java.lang.annotation.*;
 @Documented
 public @interface AgeBetween {
     String message() default "Отказ в кредите: Возраст должен быть в диапазоне от {min} до {max} лет";
-
     Class<?>[] groups() default {};
 
     Class<? extends Payload>[] payload() default {};

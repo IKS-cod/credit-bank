@@ -3,6 +3,8 @@ package com.neoflex.calculator.dto;
 import com.neoflex.calculator.enums.EmploymentStatus;
 import com.neoflex.calculator.enums.Position;
 import com.neoflex.calculator.validation.NotUnemployed;
+import com.neoflex.calculator.validation.ValidWorkCurrentExperience;
+import com.neoflex.calculator.validation.ValidWorkExperience;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 import lombok.Data;
@@ -33,14 +35,12 @@ public class EmploymentDto {
 
     @Schema(description = "Общий трудовой стаж в месяцах", example = "120", required = true)
     @NotNull(message = "Общий трудовой стаж обязателен")
-    @Min(value = 18, message = "Общий трудовой стаж менее 18 месяцев — отказ в выдаче кредита")
-    @Max(value = 600, message = "Общий трудовой стаж не может превышать 600 месяцев")
+    @ValidWorkExperience
     private Integer workExperienceTotal;
 
     @Schema(description = "Текущий трудовой стаж на последнем месте работы в месяцах", example = "24", required = true)
     @NotNull(message = "Текущий трудовой стаж обязателен")
-    @Min(value = 3, message = "Текущий трудовой стаж менее 3 месяцев — отказ в выдаче кредита")
-    @Max(value = 600, message = "Текущий трудовой стаж не может превышать 600 месяцев")
+    @ValidWorkCurrentExperience
     private Integer workExperienceCurrent;
 }
 

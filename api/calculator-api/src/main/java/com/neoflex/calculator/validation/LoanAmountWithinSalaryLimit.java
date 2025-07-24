@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = LoanAmountWithinSalaryLimitValidator.class)
 public @interface LoanAmountWithinSalaryLimit {
-    String message() default "Отказ в кредите: Сумма займа превышает 24 зарплаты";
+    String message() default "Превышен лимит суммы кредита (не более 24 зарплат)";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

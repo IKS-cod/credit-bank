@@ -1,5 +1,6 @@
 package com.neoflex.calculator.validation;
 
+import com.neoflex.calculator.exception.AgeRestrictionException;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -20,7 +21,12 @@ public class AgeBetweenValidator implements ConstraintValidator<AgeBetween, Loca
     @Override
     public boolean isValid(LocalDate birthdate, ConstraintValidatorContext context) {
         int age = Period.between(birthdate, LocalDate.now()).getYears();
-        return age >= minAge && age <= maxAge;
+        if (age < minAge || age > maxAge) {
+            throw new AgeRestrictionException(
+                    String.format("Отказ в кредите: Возраст должен быть в диапазоне от %d до %d лет", minAge, maxAge)
+            );
+        }
+        return true;
     }
 }
 
