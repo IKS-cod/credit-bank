@@ -3,6 +3,7 @@ package com.neoflex.deal.enums;
 public enum EmploymentStatus {
     UNEMPLOYED,
     SELF_EMPLOYED,
-    BUSINESS_OWNER
+    BUSINESS_OWNER,
+    EMPLOYED
 }
 
