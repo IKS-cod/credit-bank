@@ -1,10 +1,11 @@
 package com.neoflex.calculator.validation;
 
 import static org.assertj.core.api.Assertions.assertThat;
-
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.LocalDate;
 
 
+import com.neoflex.calculator.exception.AgeRestrictionException;
 import jakarta.validation.ConstraintValidatorContext;
 import jakarta.validation.Payload;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +31,7 @@ public class AgeBetweenValidatorTest {
 
             @Override
             public String message() {
-                return "Возраст должен быть между 18 и 65";
+                return "Возраст должен быть между 20 и 65";
             }
 
             @Override
@@ -45,7 +46,7 @@ public class AgeBetweenValidatorTest {
 
             @Override
             public int min() {
-                return 18;
+                return 20;
             }
 
             @Override
@@ -62,7 +63,7 @@ public class AgeBetweenValidatorTest {
         LocalDate birthdate = LocalDate.now().minusYears(30);
         assertThat(validator.isValid(birthdate, context)).isTrue();
 
-        birthdate = LocalDate.now().minusYears(18);
+        birthdate = LocalDate.now().minusYears(20);
         assertThat(validator.isValid(birthdate, context)).isTrue();
 
         birthdate = LocalDate.now().minusYears(65);
@@ -70,14 +71,25 @@ public class AgeBetweenValidatorTest {
     }
 
     @Test
-    void shouldReturnFalse_whenAgeIsBelowMin() {
+    void shouldThrow_whenAgeIsBelowMin() {
         LocalDate birthdate = LocalDate.now().minusYears(17);
-        assertThat(validator.isValid(birthdate, context)).isFalse();
+        assertThatThrownBy(() -> validator.isValid(birthdate, null))
+                .isInstanceOf(AgeRestrictionException.class)
+                .hasMessageContaining("Отказ в кредите: Возраст должен быть в диапазоне от 20 до 65 лет");
     }
 
     @Test
-    void shouldReturnFalse_whenAgeIsAboveMax() {
+    void shouldThrow_whenAgeIsAboveMax() {
         LocalDate birthdate = LocalDate.now().minusYears(66);
-        assertThat(validator.isValid(birthdate, context)).isFalse();
+        assertThatThrownBy(() -> validator.isValid(birthdate, null))
+                .isInstanceOf(AgeRestrictionException.class)
+                .hasMessageContaining("Отказ в кредите: Возраст должен быть в диапазоне от 20 до 65 лет");
+    }
+
+    @Test
+    void shouldNotThrow_whenAgeWithinBounds() {
+        LocalDate birthdate = LocalDate.now().minusYears(30);
+        boolean result = validator.isValid(birthdate, null);
+        assertThat(result).isTrue();
     }
 }

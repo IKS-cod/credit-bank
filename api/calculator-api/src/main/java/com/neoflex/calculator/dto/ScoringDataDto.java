@@ -54,7 +54,7 @@ public class ScoringDataDto {
     @Schema(description = "Дата рождения клиента (формат гггг-мм-дд), не младше 18 лет", example = "1990-05-15", required = true)
     @NotNull(message = "Дата рождения клиента обязательна")
     @Adult(message = "Возраст клиента должен быть не младше 18 лет")
-    @AgeBetween
+    @AgeBetween(min = 20, max = 65)
     private LocalDate birthdate;
 
     @Schema(description = "Серия паспорта (4 цифры)", example = "1234", required = true)

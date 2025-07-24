@@ -194,7 +194,7 @@ public class CalculatorService {
         switch (status) {
             case SELF_EMPLOYED:
                 return BigDecimal.valueOf(2);
-            case BUSINESS_OWNER:
+            case BUSINESS_OWNER,EMPLOYED:
                 return BigDecimal.ONE;
             default:
                 return BigDecimal.ZERO;
@@ -207,6 +207,10 @@ public class CalculatorService {
                 return BigDecimal.valueOf(-2);
             case TOP_MANAGER:
                 return BigDecimal.valueOf(-3);
+            case WORKER:
+                return BigDecimal.valueOf(-1);
+            case OWNER:
+                return BigDecimal.valueOf(-4);
             default:
                 return BigDecimal.ZERO;
         }
@@ -216,7 +220,7 @@ public class CalculatorService {
         switch (status) {
             case MARRIED:
                 return BigDecimal.valueOf(-3);
-            case DIVORCED,SINGLE:
+            case DIVORCED,SINGLE,WIDOW_WIDOWER:
                 return BigDecimal.ONE;
             default:
                 return BigDecimal.ZERO;
