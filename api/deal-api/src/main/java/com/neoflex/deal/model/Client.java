@@ -79,4 +79,21 @@ public class Client {
         this.accountNumber = accountNumber;
     }
 
+    @Override
+    public String toString() {
+        return "Client{" +
+                "clientId=" + clientId +
+                ", lastName='" + lastName + '\'' +
+                ", firstName='" + firstName + '\'' +
+                ", middleName='" + middleName + '\'' +
+                ", birthDate=" + birthDate +
+                ", email='" + email + '\'' +
+                ", gender=" + gender +
+                ", maritalStatus=" + maritalStatus +
+                ", dependentAmount=" + dependentAmount +
+                ", passport=" + passport +
+                ", employment=" + employment +
+                ", accountNumber='" + accountNumber + '\'' +
+                '}';
+    }
 }

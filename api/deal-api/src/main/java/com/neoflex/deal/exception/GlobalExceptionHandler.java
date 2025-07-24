@@ -71,6 +71,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
                 .body(new ValidationErrorResponse(Collections.singletonList(violation)));
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<String> handle(RuntimeException ex) {
+        return ResponseEntity.status(500).body(ex.getMessage());
+    }
 }
 
 

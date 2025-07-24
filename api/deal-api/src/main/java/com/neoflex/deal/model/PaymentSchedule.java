@@ -31,5 +31,16 @@ public class PaymentSchedule {
         this.remainingDebt = remainingDebt;
     }
 
+    @Override
+    public String toString() {
+        return "PaymentSchedule{" +
+                "number=" + number +
+                ", date=" + date +
+                ", totalPayment=" + totalPayment +
+                ", interestPayment=" + interestPayment +
+                ", debtPayment=" + debtPayment +
+                ", remainingDebt=" + remainingDebt +
+                '}';
+    }
 }
 

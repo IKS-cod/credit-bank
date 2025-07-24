@@ -4,6 +4,7 @@ import com.neoflex.deal.enums.ApplicationStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -69,6 +70,21 @@ public class Statement {
         this.signDate = signDate;
         this.sesCode = sesCode;
         this.statementStatusHistory = statementStatusHistory;
+    }
+
+    @Override
+    public String toString() {
+        return "Statement{" +
+                "statementId=" + statementId +
+                ", client=" + client +
+                ", credit=" + credit +
+                ", status=" + status +
+                ", creationDate=" + creationDate +
+                ", appliedOffer=" + appliedOffer +
+                ", signDate=" + signDate +
+                ", sesCode='" + sesCode + '\'' +
+                ", statementStatusHistory=" + statementStatusHistory +
+                '}';
     }
 }
 

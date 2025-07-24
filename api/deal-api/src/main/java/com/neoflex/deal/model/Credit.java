@@ -70,5 +70,20 @@ public class Credit {
         this.creditStatus = creditStatus;
     }
 
+    @Override
+    public String toString() {
+        return "Credit{" +
+                "creditId=" + creditId +
+                ", amount=" + amount +
+                ", term=" + term +
+                ", monthlyPayment=" + monthlyPayment +
+                ", rate=" + rate +
+                ", psk=" + psk +
+                ", paymentSchedule=" + paymentSchedule +
+                ", insuranceEnabled=" + insuranceEnabled +
+                ", salaryClient=" + salaryClient +
+                ", creditStatus=" + creditStatus +
+                '}';
+    }
 }
 

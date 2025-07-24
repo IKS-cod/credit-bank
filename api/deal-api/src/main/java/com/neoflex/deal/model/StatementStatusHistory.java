@@ -23,6 +23,14 @@ public class StatementStatusHistory {
         this.changeType = changeType;
     }
 
+    @Override
+    public String toString() {
+        return "StatementStatusHistory{" +
+                "status='" + status + '\'' +
+                ", time=" + time +
+                ", changeType=" + changeType +
+                '}';
+    }
 }
 
 

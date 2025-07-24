@@ -35,5 +35,18 @@ public class LoanOffer {
         this.isSalaryClient = isSalaryClient;
     }
 
+    @Override
+    public String toString() {
+        return "LoanOffer{" +
+                "statementId=" + statementId +
+                ", requestedAmount=" + requestedAmount +
+                ", totalAmount=" + totalAmount +
+                ", term=" + term +
+                ", monthlyPayment=" + monthlyPayment +
+                ", rate=" + rate +
+                ", isInsuranceEnabled=" + isInsuranceEnabled +
+                ", isSalaryClient=" + isSalaryClient +
+                '}';
+    }
 }
 

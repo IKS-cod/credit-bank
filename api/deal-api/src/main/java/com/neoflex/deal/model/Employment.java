@@ -18,6 +18,17 @@ public class Employment {
     private Integer workExperienceTotal;
     private Integer workExperienceCurrent;
 
+    @Override
+    public String toString() {
+        return "Employment{" +
+                "status=" + status +
+                ", employerInn='" + employerInn + '\'' +
+                ", salary=" + salary +
+                ", position=" + position +
+                ", workExperienceTotal=" + workExperienceTotal +
+                ", workExperienceCurrent=" + workExperienceCurrent +
+                '}';
+    }
 }
 
 
