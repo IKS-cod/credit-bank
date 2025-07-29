@@ -76,6 +76,13 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handle(RuntimeException ex) {
         return ResponseEntity.status(500).body(ex.getMessage());
     }
+
+    @ExceptionHandler({StatementNotFoundException.class, ClientNotFoundException.class})
+    public ResponseEntity<String> handleNotFoundExceptions(RuntimeException ex) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
 }
 
 

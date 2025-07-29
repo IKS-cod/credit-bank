@@ -67,9 +67,7 @@ public class DealMapper {
         return scoringData;
     }
 
-    public Credit toCredit(CreditDto creditDto) {
-        Credit credit = new Credit();
-        credit.setCreditId(null);
+    public Credit toCredit(Credit credit, CreditDto creditDto) {
         credit.setAmount(creditDto.getAmount());
         credit.setTerm(creditDto.getTerm());
         credit.setMonthlyPayment(creditDto.getMonthlyPayment());
@@ -94,5 +92,18 @@ public class DealMapper {
         credit.setCreditStatus(CreditStatus.CALCULATED);
 
         return credit;
+    }
+
+    public Employment toEmployment(FinishRegistrationRequestDto finishDto) {
+        Employment employment = new Employment();
+        employment.setStatus(finishDto.getEmployment().getEmploymentStatus());
+        employment.setEmployerInn(finishDto.getEmployment().getEmployerINN());
+        employment.setSalary(finishDto.getEmployment().getSalary());
+        employment.setPosition(finishDto.getEmployment().getPosition());
+        employment.setWorkExperienceTotal(finishDto.getEmployment().getWorkExperienceTotal());
+        employment.setWorkExperienceCurrent(finishDto.getEmployment().getWorkExperienceCurrent());
+
+
+        return employment;
     }
 }

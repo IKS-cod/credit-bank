@@ -3,14 +3,11 @@ package com.neoflex.deal.service;
 import com.neoflex.deal.dto.*;
 import com.neoflex.deal.enums.ApplicationStatus;
 import com.neoflex.deal.enums.ChangeType;
-import com.neoflex.deal.enums.CreditStatus;
+import com.neoflex.deal.exception.ClientNotFoundException;
 import com.neoflex.deal.exception.StatementNotFoundException;
 import com.neoflex.deal.integration.CalculatorRequester;
 import com.neoflex.deal.mapper.DealMapper;
-import com.neoflex.deal.model.Client;
-import com.neoflex.deal.model.Credit;
-import com.neoflex.deal.model.Statement;
-import com.neoflex.deal.model.StatementStatusHistory;
+import com.neoflex.deal.model.*;
 import com.neoflex.deal.repository.ClientRepository;
 import com.neoflex.deal.repository.CreditRepository;
 import com.neoflex.deal.repository.StatementRepository;
@@ -64,11 +61,17 @@ public class DealService {
     }
 
     @Transactional
-    public void finishRegistration(String statementIdStr, FinishRegistrationRequestDto finishDto) {
+    public void finishRegistration(UUID statementIdStr, FinishRegistrationRequestDto finishDto) {
         logger.info("statementIdStr: {}", statementIdStr);
         logger.info("finishDto: {}", finishDto);
         logger.info("finishRegistration - Входные данные: statementId={}, finishDto={}", statementIdStr, finishDto);
-        Statement statement = findStatement(UUID.fromString(statementIdStr));
+        Statement statement = findStatement(statementIdStr);
+
+        Client clientFromBD = findClient(statement.getClient().getClientId());
+        logger.info("Получен Client: {}", clientFromBD);
+        Client clientForUpdate = updateClient(clientFromBD, finishDto);
+        clientRepository.save(clientForUpdate);
+        logger.info("Client сохранён: {}", clientForUpdate);
 
         ScoringDataDto scoringData = dealMapper.toScoringDataDto(
                 finishDto, statement.getClient(), statement.getAppliedOffer());
@@ -77,7 +80,10 @@ public class DealService {
         CreditDto creditDto = calculatorRequester.calculateCredit(scoringData);
         logger.debug("Получен CreditDto: {}", creditDto);
 
-        Credit credit = dealMapper.toCredit(creditDto);
+        Credit creditFromBD = findCredit(statement.getCredit().getCreditId());
+        logger.info("Получен Credit: {}", creditFromBD);
+
+        Credit credit = dealMapper.toCredit(creditFromBD, creditDto);
         creditRepository.save(credit);
         logger.info("Credit сохранён: {}", credit);
 
@@ -87,6 +93,33 @@ public class DealService {
 
         statementRepository.save(statement);
         logger.info("finishRegistration - Заявка обновлена и сохранена: {}", statement);
+    }
+
+    private Credit findCredit(UUID creditId) {
+        return creditRepository.findById(creditId)
+                .orElseThrow(() -> {
+                    logger.debug("Credit не найден с id: {}", creditId);
+                    return new ClientNotFoundException("Credit not found with id: " + creditId);
+                });
+    }
+
+    private Client findClient(UUID clientId) {
+        return clientRepository.findById(clientId)
+                .orElseThrow(() -> {
+                    logger.debug("Client не найден с id: {}", clientId);
+                    return new ClientNotFoundException("Client not found with id: " + clientId);
+                });
+    }
+
+    private Client updateClient(Client client, FinishRegistrationRequestDto finishDto) {
+        client.setDependentAmount(finishDto.getDependentAmount());
+        client.setAccountNumber(finishDto.getAccountNumber());
+        client.setGender(finishDto.getGender());
+        client.setMaritalStatus(finishDto.getMaritalStatus());
+        Employment employment = dealMapper.toEmployment(finishDto);
+        logger.debug("Создан Employment: {}", employment);
+        client.setEmployment(employment);
+        return client;
     }
 
     private Client saveClient(LoanStatementRequestDto requestDto) {
@@ -106,7 +139,6 @@ public class DealService {
         Credit credit = new Credit();
         credit.setAmount(requestDto.getAmount());
         credit.setTerm(requestDto.getTerm());
-        credit.setCreditStatus(CreditStatus.CALCULATED);
         credit = creditRepository.save(credit);
         statement.setCredit(credit);
 
@@ -129,7 +161,10 @@ public class DealService {
 
     private Statement findStatement(UUID statementId) {
         return statementRepository.findById(statementId)
-                .orElseThrow(() -> new StatementNotFoundException("Statement not found with id: " + statementId));
+                .orElseThrow(() -> {
+                    logger.debug("Statement не найден с id: {}", statementId);
+                    return new StatementNotFoundException("Statement not found with id: " + statementId);
+                });
     }
 
     private void addStatusHistory(Statement statement, ApplicationStatus status, ChangeType changeType) {

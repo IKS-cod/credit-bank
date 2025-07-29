@@ -1,28 +1,20 @@
 package com.neoflex.deal.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Passport {
 
     private String series;
     private String number;
     private String issueBranch;
     private LocalDate issueDate;
-
-    @Override
-    public String toString() {
-        return "Passport{" +
-                "series='" + series + '\'' +
-                ", number='" + number + '\'' +
-                ", issueBranch='" + issueBranch + '\'' +
-                ", issueDate=" + issueDate +
-                '}';
-    }
 }
 
 

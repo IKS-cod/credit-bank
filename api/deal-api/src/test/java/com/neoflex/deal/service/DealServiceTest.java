@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neoflex.deal.dto.*;
 import com.neoflex.deal.enums.ApplicationStatus;
 import com.neoflex.deal.enums.Gender;
+import com.neoflex.deal.exception.ClientNotFoundException;
 import com.neoflex.deal.exception.StatementNotFoundException;
 import com.neoflex.deal.integration.CalculatorRequester;
 import com.neoflex.deal.mapper.DealMapper;
@@ -132,7 +133,7 @@ class DealServiceTest {
 
         verify(statementRepository).findById(statementId);
         verify(statementRepository).save(any(Statement.class));
-        assertThat(statement.getStatus()).isEqualTo(ApplicationStatus.PREAPPROVAL);
+        assertThat(statement.getStatus()).isEqualTo(ApplicationStatus.APPROVED);
         assertThat(statement.getAppliedOffer()).isNotNull();
 
         List<StatementStatusHistory> history = statement.getStatementStatusHistory();
@@ -160,7 +161,6 @@ class DealServiceTest {
     @Test
     void testFinishRegistration_success() {
         UUID statementId = UUID.randomUUID();
-        String statementIdStr = statementId.toString();
 
         FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
         finishDto.setGender(Gender.MALE);
@@ -169,13 +169,14 @@ class DealServiceTest {
         client.setFirstName("John");
         client.setLastName("Doe");
         LoanOffer appliedOffer = new LoanOffer();
-
+        Credit existingCredit = new Credit();
+        existingCredit.setCreditId(UUID.randomUUID());
         Statement statement = new Statement();
         statement.setStatementId(statementId);
         statement.setClient(client);
         statement.setStatementStatusHistory(new ArrayList<>());
         statement.setAppliedOffer(appliedOffer);
-
+        statement.setCredit(existingCredit);
         when(statementRepository.findById(statementId)).thenReturn(Optional.of(statement));
 
         ScoringDataDto scoringData = new ScoringDataDto();
@@ -186,17 +187,18 @@ class DealServiceTest {
         when(calculatorRequester.calculateCredit(scoringData)).thenReturn(creditDto);
 
         Credit credit = new Credit();
-        when(dealMapper.toCredit(creditDto)).thenReturn(credit);
+        when(dealMapper.toCredit(existingCredit, creditDto)).thenReturn(credit);
         when(creditRepository.save(any(Credit.class))).thenReturn(credit);
         when(statementRepository.save(any(Statement.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        dealService.finishRegistration(statementIdStr, finishDto);
+        when(clientRepository.findById(client.getClientId())).thenReturn(Optional.of(client));
+        when(creditRepository.findById(existingCredit.getCreditId())).thenReturn(Optional.of(existingCredit));
+        dealService.finishRegistration(statementId, finishDto);
 
         verify(statementRepository).findById(statementId);
         verify(calculatorRequester).calculateCredit(any(ScoringDataDto.class));
         verify(creditRepository).save(any(Credit.class));
         verify(statementRepository).save(any(Statement.class));
-        assertThat(statement.getStatus()).isEqualTo(ApplicationStatus.PREPARE_DOCUMENTS);
+        assertThat(statement.getStatus()).isEqualTo(ApplicationStatus.CC_APPROVED);
         assertThat(statement.getCredit()).isNotNull();
         assertThat(statement.getStatementStatusHistory()).isNotEmpty();
         // Проверка сериализации Credit
@@ -206,11 +208,10 @@ class DealServiceTest {
     @Test
     void testFinishRegistration_statementNotFound() {
         UUID statementId = UUID.randomUUID();
-        String statementIdStr = statementId.toString();
         FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
         when(statementRepository.findById(statementId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> dealService.finishRegistration(statementIdStr, finishDto))
+        assertThatThrownBy(() -> dealService.finishRegistration(statementId, finishDto))
                 .isInstanceOf(StatementNotFoundException.class)
                 .hasMessageContaining("Statement not found with id: " + statementId);
 
@@ -223,10 +224,10 @@ class DealServiceTest {
     @Test
     void testFinishRegistration_calculatorError() {
         UUID statementId = UUID.randomUUID();
-        String statementIdStr = statementId.toString();
         FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
 
         Client client = new Client();
+        when(clientRepository.findById(client.getClientId())).thenReturn(Optional.of(client));
         LoanOffer appliedOffer = new LoanOffer();
 
         Statement statement = new Statement();
@@ -241,7 +242,7 @@ class DealServiceTest {
         when(calculatorRequester.calculateCredit(scoringData))
                 .thenThrow(new RuntimeException("Ошибка при вызове микросервиса калькулятора"));
 
-        assertThatThrownBy(() -> dealService.finishRegistration(statementIdStr, finishDto))
+        assertThatThrownBy(() -> dealService.finishRegistration(statementId, finishDto))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("Ошибка при вызове микросервиса калькулятора");
 
@@ -249,6 +250,76 @@ class DealServiceTest {
         verify(calculatorRequester).calculateCredit(any(ScoringDataDto.class));
         verify(creditRepository, never()).save(any());
         verify(statementRepository, never()).save(any());
+    }
+
+    /// /
+
+    @Test
+    void testFinishRegistration_clientNotFound() {
+        UUID statementId = UUID.randomUUID();
+        FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
+
+        Client client = new Client();
+        client.setClientId(UUID.randomUUID());
+
+        LoanOffer appliedOffer = new LoanOffer();
+        Credit credit = new Credit();
+        credit.setCreditId(UUID.randomUUID());
+
+        Statement statement = new Statement();
+        statement.setStatementId(statementId);
+        statement.setClient(client);
+        statement.setAppliedOffer(appliedOffer);
+        statement.setCredit(credit);
+
+        when(statementRepository.findById(statementId)).thenReturn(Optional.of(statement));
+        when(clientRepository.findById(client.getClientId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> dealService.finishRegistration(statementId, finishDto))
+                .isInstanceOf(ClientNotFoundException.class)
+                .hasMessageContaining("Client not found with id");
+
+        verify(statementRepository).findById(statementId);
+        verify(clientRepository).findById(client.getClientId());
+        verifyNoMoreInteractions(creditRepository, calculatorRequester, dealMapper);
+    }
+
+    @Test
+    void testFinishRegistration_creditNotFound() {
+        UUID statementId = UUID.randomUUID();
+        FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
+
+        Client client = new Client();
+        client.setClientId(UUID.randomUUID());
+
+        LoanOffer appliedOffer = new LoanOffer();
+
+        Credit credit = new Credit();
+        credit.setCreditId(UUID.randomUUID());
+
+        Statement statement = new Statement();
+        statement.setStatementId(statementId);
+        statement.setClient(client);
+        statement.setAppliedOffer(appliedOffer);
+        statement.setCredit(credit);
+
+        ScoringDataDto scoringData = new ScoringDataDto();
+        CreditDto creditDto = new CreditDto();
+
+        when(statementRepository.findById(statementId)).thenReturn(Optional.of(statement));
+        when(clientRepository.findById(client.getClientId())).thenReturn(Optional.of(client));
+        when(dealMapper.toScoringDataDto(finishDto, client, appliedOffer)).thenReturn(scoringData);
+        when(calculatorRequester.calculateCredit(scoringData)).thenReturn(creditDto);
+        when(creditRepository.findById(credit.getCreditId())).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> dealService.finishRegistration(statementId, finishDto))
+                .isInstanceOf(ClientNotFoundException.class)
+                .hasMessageContaining("Credit not found");
+
+        verify(statementRepository).findById(statementId);
+        verify(clientRepository).findById(client.getClientId());
+        verify(calculatorRequester).calculateCredit(scoringData);
+        verify(creditRepository).findById(credit.getCreditId());
     }
 }
 

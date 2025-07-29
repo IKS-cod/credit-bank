@@ -2,9 +2,9 @@ package com.neoflex.deal.model;
 
 import com.neoflex.deal.enums.ApplicationStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -12,10 +12,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "statement")
-@Getter
-@Setter
 public class Statement {
 
     @Id
@@ -56,35 +57,5 @@ public class Statement {
     @JdbcTypeCode(SqlTypes.JSON)
     private List<StatementStatusHistory> statementStatusHistory;
 
-    public Statement() {
-    }
-
-    public Statement(UUID statementId, Client client, Credit credit, ApplicationStatus status, LocalDateTime creationDate,
-                     LoanOffer appliedOffer, LocalDateTime signDate, String sesCode, List<StatementStatusHistory> statementStatusHistory) {
-        this.statementId = statementId;
-        this.client = client;
-        this.credit = credit;
-        this.status = status;
-        this.creationDate = creationDate;
-        this.appliedOffer = appliedOffer;
-        this.signDate = signDate;
-        this.sesCode = sesCode;
-        this.statementStatusHistory = statementStatusHistory;
-    }
-
-    @Override
-    public String toString() {
-        return "Statement{" +
-                "statementId=" + statementId +
-                ", client=" + client +
-                ", credit=" + credit +
-                ", status=" + status +
-                ", creationDate=" + creationDate +
-                ", appliedOffer=" + appliedOffer +
-                ", signDate=" + signDate +
-                ", sesCode='" + sesCode + '\'' +
-                ", statementStatusHistory=" + statementStatusHistory +
-                '}';
-    }
 }
 

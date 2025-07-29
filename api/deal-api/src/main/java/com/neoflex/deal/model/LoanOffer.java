@@ -1,13 +1,15 @@
 package com.neoflex.deal.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class LoanOffer {
 
     private UUID statementId;
@@ -18,35 +20,5 @@ public class LoanOffer {
     private BigDecimal rate;
     private Boolean isInsuranceEnabled;
     private Boolean isSalaryClient;
-
-    public LoanOffer() {
-    }
-
-    public LoanOffer(UUID statementId, BigDecimal requestedAmount, BigDecimal totalAmount,
-                        Integer term, BigDecimal monthlyPayment, BigDecimal rate,
-                        Boolean isInsuranceEnabled, Boolean isSalaryClient) {
-        this.statementId = statementId;
-        this.requestedAmount = requestedAmount;
-        this.totalAmount = totalAmount;
-        this.term = term;
-        this.monthlyPayment = monthlyPayment;
-        this.rate = rate;
-        this.isInsuranceEnabled = isInsuranceEnabled;
-        this.isSalaryClient = isSalaryClient;
-    }
-
-    @Override
-    public String toString() {
-        return "LoanOffer{" +
-                "statementId=" + statementId +
-                ", requestedAmount=" + requestedAmount +
-                ", totalAmount=" + totalAmount +
-                ", term=" + term +
-                ", monthlyPayment=" + monthlyPayment +
-                ", rate=" + rate +
-                ", isInsuranceEnabled=" + isInsuranceEnabled +
-                ", isSalaryClient=" + isSalaryClient +
-                '}';
-    }
 }
 

@@ -1,15 +1,9 @@
 package com.neoflex.deal.controller;
 
 
-
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.neoflex.deal.dto.EmploymentDto;
 import com.neoflex.deal.dto.FinishRegistrationRequestDto;
 import com.neoflex.deal.dto.LoanOfferDto;
@@ -22,14 +16,23 @@ import com.neoflex.deal.exception.GlobalExceptionHandler;
 import com.neoflex.deal.service.DealService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.*;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.*;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 public class DealControllerTest {
 
@@ -152,7 +155,7 @@ public class DealControllerTest {
 
     @Test
     public void testFinishRegistration_success() throws Exception {
-        String statementId = UUID.randomUUID().toString();
+        UUID statementId = UUID.randomUUID();
         FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
         finishDto.setGender(Gender.MALE);
         finishDto.setMaritalStatus(MaritalStatus.SINGLE);
@@ -184,7 +187,7 @@ public class DealControllerTest {
 
     @Test
     public void testFinishRegistration_error() throws Exception {
-        String statementId = UUID.randomUUID().toString();
+        UUID statementId = UUID.randomUUID();
         FinishRegistrationRequestDto finishDto = new FinishRegistrationRequestDto();
         doThrow(new RuntimeException("finish error"))
                 .when(dealService).finishRegistration(eq(statementId), any(FinishRegistrationRequestDto.class));

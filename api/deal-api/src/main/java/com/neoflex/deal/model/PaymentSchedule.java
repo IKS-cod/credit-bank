@@ -1,13 +1,15 @@
 package com.neoflex.deal.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PaymentSchedule {
 
     private Integer number;
@@ -16,31 +18,5 @@ public class PaymentSchedule {
     private BigDecimal interestPayment;
     private BigDecimal debtPayment;
     private BigDecimal remainingDebt;
-
-    public PaymentSchedule() {
-    }
-
-    public PaymentSchedule(Integer number, LocalDate date, BigDecimal totalPayment,
-                                     BigDecimal interestPayment, BigDecimal debtPayment,
-                                     BigDecimal remainingDebt) {
-        this.number = number;
-        this.date = date;
-        this.totalPayment = totalPayment;
-        this.interestPayment = interestPayment;
-        this.debtPayment = debtPayment;
-        this.remainingDebt = remainingDebt;
-    }
-
-    @Override
-    public String toString() {
-        return "PaymentSchedule{" +
-                "number=" + number +
-                ", date=" + date +
-                ", totalPayment=" + totalPayment +
-                ", interestPayment=" + interestPayment +
-                ", debtPayment=" + debtPayment +
-                ", remainingDebt=" + remainingDebt +
-                '}';
-    }
 }
 

@@ -2,13 +2,15 @@ package com.neoflex.deal.model;
 
 import com.neoflex.deal.enums.EmploymentPosition;
 import com.neoflex.deal.enums.EmploymentStatus;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Employment {
 
     private EmploymentStatus status;
@@ -17,18 +19,6 @@ public class Employment {
     private EmploymentPosition position;
     private Integer workExperienceTotal;
     private Integer workExperienceCurrent;
-
-    @Override
-    public String toString() {
-        return "Employment{" +
-                "status=" + status +
-                ", employerInn='" + employerInn + '\'' +
-                ", salary=" + salary +
-                ", position=" + position +
-                ", workExperienceTotal=" + workExperienceTotal +
-                ", workExperienceCurrent=" + workExperienceCurrent +
-                '}';
-    }
 }
 
 

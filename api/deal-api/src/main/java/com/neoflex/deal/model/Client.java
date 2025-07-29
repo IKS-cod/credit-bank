@@ -3,16 +3,18 @@ package com.neoflex.deal.model;
 import com.neoflex.deal.enums.Gender;
 import com.neoflex.deal.enums.MaritalStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.util.UUID;
 import java.time.LocalDate;
+import java.util.UUID;
 
-@Setter
-@Getter
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "client")
 public class Client {
@@ -59,41 +61,4 @@ public class Client {
     @Column(name = "account_number", unique = true)
     private String accountNumber;
 
-    public Client() {
-    }
-
-    public Client(UUID clientId, String lastName, String firstName, String middleName, LocalDate birthDate,
-                  String email, Gender gender, MaritalStatus maritalStatus, Integer dependentAmount,
-                  Passport passport, Employment employment, String accountNumber) {
-        this.clientId = clientId;
-        this.lastName = lastName;
-        this.firstName = firstName;
-        this.middleName = middleName;
-        this.birthDate = birthDate;
-        this.email = email;
-        this.gender = gender;
-        this.maritalStatus = maritalStatus;
-        this.dependentAmount = dependentAmount;
-        this.passport = passport;
-        this.employment = employment;
-        this.accountNumber = accountNumber;
-    }
-
-    @Override
-    public String toString() {
-        return "Client{" +
-                "clientId=" + clientId +
-                ", lastName='" + lastName + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", middleName='" + middleName + '\'' +
-                ", birthDate=" + birthDate +
-                ", email='" + email + '\'' +
-                ", gender=" + gender +
-                ", maritalStatus=" + maritalStatus +
-                ", dependentAmount=" + dependentAmount +
-                ", passport=" + passport +
-                ", employment=" + employment +
-                ", accountNumber='" + accountNumber + '\'' +
-                '}';
-    }
 }

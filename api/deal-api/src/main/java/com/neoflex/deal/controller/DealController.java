@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/deal")
@@ -58,7 +59,7 @@ public class DealController {
     @PostMapping("/calculate/{statementId}")
     public void finishRegistration(
             @Parameter(description = "ID заявки", required = true)
-            @PathVariable("statementId") String statementId,
+            @PathVariable("statementId") UUID statementId,
             @RequestBody FinishRegistrationRequestDto request) {
         log.info("POST /deal/calculate/{} - Входные данные: {}", statementId, request);
         dealService.finishRegistration(statementId, request);
