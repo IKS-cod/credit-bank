@@ -56,6 +56,11 @@ public class DealService {
         addStatusHistory(statement, ApplicationStatus.APPROVED, ChangeType.AUTOMATIC);
 
         statement.setAppliedOffer(dealMapper.toLoanOffer(loanOfferDto));
+        // Задержка удерживает блокировку и транзакцию
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ignored) {}
+
         statementRepository.save(statement);
         logger.info("Заявка обновлена и сохранена: {}", statement);
     }
