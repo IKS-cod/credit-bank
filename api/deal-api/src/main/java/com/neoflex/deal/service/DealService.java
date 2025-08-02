@@ -121,6 +121,10 @@ public class DealService {
         client.setAccountNumber(finishDto.getAccountNumber());
         client.setGender(finishDto.getGender());
         client.setMaritalStatus(finishDto.getMaritalStatus());
+        Passport passport = client.getPassport();
+        passport.setIssueDate(finishDto.getPassportIssueDate());
+        passport.setIssueBranch(finishDto.getPassportIssueBranch());
+        client.setPassport(passport);
         Employment employment = dealMapper.toEmployment(finishDto);
         logger.debug("Создан Employment: {}", employment);
         client.setEmployment(employment);
