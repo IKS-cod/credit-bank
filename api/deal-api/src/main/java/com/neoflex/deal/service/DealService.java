@@ -56,6 +56,11 @@ public class DealService {
         addStatusHistory(statement, ApplicationStatus.APPROVED, ChangeType.AUTOMATIC);
 
         statement.setAppliedOffer(dealMapper.toLoanOffer(loanOfferDto));
+        // Задержка удерживает блокировку и транзакцию
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException ignored) {}
+
         statementRepository.save(statement);
         logger.info("Заявка обновлена и сохранена: {}", statement);
     }
@@ -116,6 +121,10 @@ public class DealService {
         client.setAccountNumber(finishDto.getAccountNumber());
         client.setGender(finishDto.getGender());
         client.setMaritalStatus(finishDto.getMaritalStatus());
+        Passport passport = client.getPassport();
+        passport.setIssueDate(finishDto.getPassportIssueDate());
+        passport.setIssueBranch(finishDto.getPassportIssueBranch());
+        client.setPassport(passport);
         Employment employment = dealMapper.toEmployment(finishDto);
         logger.debug("Создан Employment: {}", employment);
         client.setEmployment(employment);

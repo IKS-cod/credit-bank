@@ -3,7 +3,6 @@
 		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<parent>
 		<groupId>com.neoflex</groupId>
 		<artifactId>api</artifactId>
@@ -11,27 +10,30 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>deal</artifactId>
-	<name>deal</name>
-	<description>Demo project for Spring Boot</description>
+	<artifactId>statement</artifactId>
+	<name>statement</name>
+	<description>microservice statement</description>
 
 	<properties>
 		<java.version>21</java.version>
 	</properties>
 
 	<dependencies>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
+
 		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
+			<groupId>org.liquibase</groupId>
+			<artifactId>liquibase-core</artifactId>
+			<version>4.31.1</version>
 		</dependency>
 
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
+			<groupId>org.postgresql</groupId>
+			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
@@ -46,5 +48,5 @@
 			</plugin>
 		</plugins>
 	</build>
-</project>
 
+</project>
